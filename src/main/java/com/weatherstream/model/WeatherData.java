@@ -1,7 +1,5 @@
 package com.weatherstream.model;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 public class WeatherData {
 	private String name;
 	private Main main;
@@ -11,13 +9,24 @@ public class WeatherData {
 	public String getName() {
 		return name;
 	}
+
 	public void setName(String name) {
 		this.name = name;
 	}
 
-	public Main getMain() { return main; }
-	public void setMain(Main main) { this.main = main; }
+	public Main getMain() {
+		return main;
+	}
 
-	public Weather[] getWeather() { return weather; }
-	public void setWeather(Weather[] weather) { this.weather = weather; }
+	public void setMain(Main main) {
+		this.main = main;
+	}
+
+	public Weather[] getWeather() {
+		return weather;
+	}
+
+	public void setWeather(Weather[] weather) {
+		this.weather = weather;
+	}
 }
