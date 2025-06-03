@@ -22,8 +22,8 @@ public class WeatherController {
 	}
 
 	@GetMapping("/weather")
-	public WeatherData getWeather(@RequestParam String city) {
-		return weatherService.getCurrentWeather(city);
+	public String getWeather(@RequestParam String city) {
+		return weatherService.ingestWeatherData(city);
 	}
 
 	@GetMapping("/health")
