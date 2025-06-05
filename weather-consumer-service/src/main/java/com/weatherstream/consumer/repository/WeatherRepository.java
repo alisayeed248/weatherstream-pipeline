@@ -17,4 +17,7 @@ public interface WeatherRepository extends JpaRepository<WeatherRecord, Long> {
     
     @Query("SELECT w FROM WeatherRecord w WHERE w.recordedAt > :since ORDER BY w.recordedAt DESC")
     List<WeatherRecord> findRecentWeather(LocalDateTime since);
+
+    @Query("SELECT DISTINCT w.city FROM WeatherRecord w ORDER BY w.city")
+    List<String> findAllCities();
 }
