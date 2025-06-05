@@ -34,3 +34,6 @@ build/
 
 ### Repomix ###
 repomix-output.xml
+
+### Gradle ###
+**/.gradle/
