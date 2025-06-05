@@ -20,4 +20,6 @@ public interface WeatherRepository extends JpaRepository<WeatherRecord, Long> {
 
     @Query("SELECT DISTINCT w.city FROM WeatherRecord w ORDER BY w.city")
     List<String> findAllCities();
+
+    List<WeatherRecord> findByCityAndRecordedAtAfterOrderByRecordedAtDesc(String city, LocalDateTime after);
 }
