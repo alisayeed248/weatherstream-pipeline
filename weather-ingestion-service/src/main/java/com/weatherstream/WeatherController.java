@@ -5,15 +5,20 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.weatherstream.model.WeatherData;
+import com.weatherstream.model.TrackedLocation;
 import com.weatherstream.service.WeatherService;
+import com.weatherstream.repository.TrackedLocationRepository;
+import java.util.List;
 
 @RestController
 public class WeatherController {
 
 	private final WeatherService weatherService;
+	private final TrackedLocationRepository trackedLocationRepository;
 
-	public WeatherController(WeatherService weatherService) {
+	public WeatherController(WeatherService weatherService, TrackedLocationRepository trackedLocationRepository) {
 		this.weatherService = weatherService;
+		this.trackedLocationRepository = trackedLocationRepository;
 	}
 
 	@GetMapping("/hello")
@@ -29,5 +34,10 @@ public class WeatherController {
 	@GetMapping("/health")
 	public String health() {
 		return "Weather service is running!";
+	}
+
+	@GetMapping("/test-db")
+	public List<TrackedLocation> testDatabase() {
+		return trackedLocationRepository.findByIsActiveTrue();
 	}
 }
