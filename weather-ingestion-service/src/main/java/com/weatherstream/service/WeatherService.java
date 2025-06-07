@@ -45,21 +45,4 @@ public class WeatherService {
       return "Error ingesting weather data: " + e.getMessage();
     }
   }
-
-  @Scheduled(fixedRate = 60000)
-  public void automaticWeatherFetch() {
-    List<String> cities = Arrays.asList("London", "Tokyo", "Sydney", "NewYork", "Paris");
-    logger.info("Starting automatic weather fetch for {} cities", cities.size());
-
-    for (String city : cities) {
-      logger.info("Fetching weather for {}", city);
-      try {
-        ingestWeatherData(city);
-        logger.info("Successfully fetched weather data for {}", city);
-      } catch (Exception e) {
-        logger.error("Error automatically fetching weather data for {}: {}", city, e.getMessage());
-      }
-    }
-    logger.info("Completed weather fetch cycle for all cities");
-  }
 }

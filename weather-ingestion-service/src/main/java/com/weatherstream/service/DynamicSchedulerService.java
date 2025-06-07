@@ -98,8 +98,9 @@ public class DynamicSchedulerService {
       logger.warn("Failed to cancel timer for: {} (may have already completed)", cityName);
       runningTimers.remove(cityName);
     }
+  }
 
-    // Initialize timers on startup
+  // Initialize timers on startup
     @PostConstruct
     public void initializeAllTimers() {
       logger.info("Initializing weather timers for all tracked locations...");
@@ -118,5 +119,8 @@ public class DynamicSchedulerService {
 
       logger.info("Finished initializing {} weather timers", runningTimers.size());
     }
-  }
+
+    public void logRunningTimers() {
+      logger.info("Currently running timers for cities: {}", runningTimers.keySet());
+    }
 }
