@@ -79,4 +79,44 @@ public class DynamicSchedulerService {
     runningTimers.put(cityName, timer);
     logger.info("Started timer for {} - will fetch every {} minutes", cityName, location.getIntervalMinutes());
   }
+  
+  public void stopCityTimer(String cityName) {
+    ScheduledFuture<?> timer = runningTimers.get(cityName);
+
+    if (timer == null) {
+      logger.warn("No timer found for city: {}", cityName);
+      return;
+    }
+
+    // We cancel the timer (false = don't interrupt if currently running)
+    boolean cancelled = timer.cancel(false);
+
+    if (cancelled) {
+      runningTimers.remove(cityName);
+      logger.info("Successfully stopped timer for: {}", cityName);
+    } else {
+      logger.warn("Failed to cancel timer for: {} (may have already completed)", cityName);
+      runningTimers.remove(cityName);
+    }
+
+    // Initialize timers on startup
+    @PostConstruct
+    public void initializeAllTimers() {
+      logger.info("Initializing weather timers for all tracked locations...");
+
+      List<TrackedLocation> activeLocations = trackedLocationRepository.findByIsActiveTrue();
+      if (activeLocations.isEmpty()) {
+        logger.info("No active tracked locations found in database.");
+        return;
+      }
+
+      logger.info("Found {} active locations to track", activeLocations.size());
+
+      for (TrackedLocation location : activeLocations) {
+        startCityTimer(location);
+      }
+
+      logger.info("Finished initializing {} weather timers", runningTimers.size());
+    }
+  }
 }
