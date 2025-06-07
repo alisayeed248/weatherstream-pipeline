@@ -36,6 +36,7 @@ services:
   postgres:
     image: postgres:15
     container_name: postgres
+    restart: unless-stopped
     environment:
       POSTGRES_DB: weatherstream
       POSTGRES_USER: weather
