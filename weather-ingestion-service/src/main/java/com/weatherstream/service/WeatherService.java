@@ -45,4 +45,22 @@ public class WeatherService {
       return "Error ingesting weather data: " + e.getMessage();
     }
   }
+
+  public boolean validateCity(String city) {
+    try {
+      logger.info("Validating city: {}", city);
+
+      // Test call to OpenWeather API
+      WeatherData weatherData = webClient.get().uri(uriBuilder -> uriBuilder.path("/weather").queryParam("q", city)
+          .queryParam("appid", apiKey).queryParam("units", "metric").build()).retrieve().bodyToMono(WeatherData.class)
+          .block();
+
+      // No exception, then city is valid
+      logger.info("City '{}' is valid - found: {}", city, weatherData.getName());
+      return true;
+    } catch (Exception e) {
+      logger.warn("City '{}' validation failed: {}", city, e.getMessage());
+      return false;
+    }
+  }
 }

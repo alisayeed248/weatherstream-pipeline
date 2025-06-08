@@ -40,4 +40,10 @@ public class WeatherController {
 	public List<TrackedLocation> testDatabase() {
 		return trackedLocationRepository.findByIsActiveTrue();
 	}
+
+	@GetMapping("/validate")
+	public String validateCity(@RequestParam String city) {
+		boolean isValid = weatherService.validateCity(city);
+		return isValid ? "Valid city: " + city : "Invalid city: " + city;
+	}
 }
