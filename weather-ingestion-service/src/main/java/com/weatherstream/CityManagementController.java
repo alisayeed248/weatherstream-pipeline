@@ -8,6 +8,8 @@ import com.weatherstream.repository.TrackedLocationRepository;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/cities")
 public class CityManagementController {
@@ -28,10 +30,10 @@ public class CityManagementController {
     return ResponseEntity.ok(isValid ? "Valid" : "Invalid");
   }
 
-  @PostMapping 
+  @PostMapping
   public ResponseEntity<String> addCity(@RequestBody AddCityRequest request) {
     try {
-      // 1. Validate the city 
+      // 1. Validate the city
       if (!weatherService.validateCity(request.getCityName())) {
         return ResponseEntity.badRequest().body("Invalid city: " + request.getCityName());
       }
@@ -49,9 +51,35 @@ public class CityManagementController {
       // 4. Start timer immediately
       schedulerService.startCityTimer(newLocation);
 
-      return ResponseEntity.ok("Successfully added " + request.getCityName() + " with " + request.getIntervalMinutes() + "-minute intervals");
+      return ResponseEntity.ok("Successfully added " + request.getCityName() + " with " + request.getIntervalMinutes()
+          + "-minute intervals");
     } catch (Exception e) {
       return ResponseEntity.internalServerError().body("Error adding city: " + e.getMessage());
+    }
+  }
+
+  @GetMapping
+  public List<TrackedLocation> getAllCities() {
+    return trackedLocationRepository.findByIsActiveTrue();
+  }
+
+  @DeleteMapping("/{cityName}")
+  public ResponseEntity<String> removeCity(@PathVariable String cityName) {
+    try {
+      TrackedLocation location = trackedLocationRepository.findByCityName(cityName);
+      if (location == null) {
+        return ResponseEntity.notFound().build();
+      }
+
+      // Stop the timer first
+      schedulerService.stopCityTimer(cityName);
+
+      // Remove from database
+      trackedLocationRepository.delete(location);
+
+      return ResponseEntity.ok("Successfully removed " + cityName);
+    } catch (Exception e) {
+      return ResponseEntity.internalServerError().body("Error removing city: " + e.getMessage());
     }
   }
 
