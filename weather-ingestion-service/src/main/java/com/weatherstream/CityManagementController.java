@@ -19,13 +19,40 @@ public class CityManagementController {
       TrackedLocationRepository trackedLocationRepository) {
     this.weatherService = weatherService;
     this.schedulerService = schedulerService;
-    this.trackedlocationRepository = trackedlocationRepository;
+    this.trackedLocationRepository = trackedLocationRepository;
   }
 
   @PostMapping("/validate")
   public ResponseEntity<String> validateCity(@RequestBody String cityName) {
     boolean isValid = weatherService.validateCity(cityName);
     return ResponseEntity.ok(isValid ? "Valid" : "Invalid");
+  }
+
+  @PostMapping 
+  public ResponseEntity<String> addCity(@RequestBody AddCityRequest request) {
+    try {
+      // 1. Validate the city 
+      if (!weatherService.validateCity(request.getCityName())) {
+        return ResponseEntity.badRequest().body("Invalid city: " + request.getCityName());
+      }
+
+      // 2. Check if city already exists
+      TrackedLocation existing = trackedLocationRepository.findByCityName(request.getCityName());
+      if (existing != null) {
+        return ResponseEntity.badRequest().body("City already being tracked: " + request.getCityName());
+      }
+
+      // 3. Create and save new tracked location
+      TrackedLocation newLocation = new TrackedLocation(request.getCityName(), request.getIntervalMinutes());
+      trackedLocationRepository.save(newLocation);
+
+      // 4. Start timer immediately
+      schedulerService.startCityTimer(newLocation);
+
+      return ResponseEntity.ok("Successfully added " + request.getCityName() + " with " + request.getIntervalMinutes() + "-minute intervals");
+    } catch (Exception e) {
+      return ResponseEntity.internalServerError().body("Error adding city: " + e.getMessage());
+    }
   }
 
 }
