@@ -8,7 +8,6 @@ services:
     environment:
       ZOOKEEPER_CLIENT_PORT: 2181
       ZOOKEEPER_TICK_TIME: 2000
-      # Limit JVM memory
       KAFKA_HEAP_OPTS: "-Xmx256m -Xms256m"
     restart: unless-stopped
     mem_limit: 512m
@@ -29,10 +28,10 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-      # Limit JVM memory
       KAFKA_HEAP_OPTS: "-Xmx512m -Xms512m"
     restart: unless-stopped
     mem_limit: 1g
+
   postgres:
     image: postgres:15
     container_name: postgres
@@ -45,6 +44,35 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      
+
+  weather-ingestion:
+    build:
+      context: ./weather-ingestion-service
+      dockerfile: Dockerfile
+    container_name: weather-ingestion
+    depends_on:
+      - kafka
+      - postgres
+    ports:
+      - "8080:8080"
+    environment:
+      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/weatherstream
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+
+  weather-consumer:
+    build:
+      context: ./weather-consumer-service
+      dockerfile: Dockerfile
+    container_name: weather-consumer
+    depends_on:
+      - kafka
+      - postgres
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/weatherstream
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:29092
+
 volumes:
   postgres_data:
