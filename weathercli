@@ -1,0 +1,21 @@
+#!/bin/bash
+# WeatherStream Pipeline CLI
+
+case "$1" in
+  start)
+    echo "Starting WeatherStream Pipeline..."
+    docker compose up -d
+    echo "Services started! Kafka and PostgreSQL are running."
+    echo "You can now start your Spring Boot services manually."
+    ;;
+  stop)
+    echo "Stopping WeatherStream Pipeline..."
+    docker compose down
+    echo "All services stopped."
+    ;;
+  *)
+    echo "Usage: ./weathercli {start|stop}"
+    echo "  start - Start Kafka and PostgreSQL"
+    echo "  stop  - Stop all services"
+    ;;
+esac
