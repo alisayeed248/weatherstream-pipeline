@@ -1,10 +1,19 @@
 #!/bin/bash
 # WeatherStream Pipeline CLI
 
+if docker compose version >/dev/null 2>&1; then
+  DOCKER_COMPOSE_CMD="docker compose"
+elif docker-compose --version >/dev/null 2>&1; then
+  DOCKER_COMPOSE_CMD="docker-compose"
+else
+  echo "Error: Docker Compose not found. Please install Docker Compose."
+  exit 1
+fi
+
 case "$1" in
   start)
     echo "Starting WeatherStream Pipeline..."
-    docker compose up -d
+    $DOCKER_COMPOSE_CMD up -d
     echo "Services started! All components are running."
     echo ""
     echo "Available commands:"
@@ -14,7 +23,7 @@ case "$1" in
     ;;
   stop)
     echo "Stopping WeatherStream Pipeline..."
-    docker compose down
+    $DOCKER_COMPOSE_CMD down
     echo "All services stopped."
     ;;
   list-cities)
