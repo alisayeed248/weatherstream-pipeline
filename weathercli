@@ -5,17 +5,49 @@ case "$1" in
   start)
     echo "Starting WeatherStream Pipeline..."
     docker compose up -d
-    echo "Services started! Kafka and PostgreSQL are running."
-    echo "You can now start your Spring Boot services manually."
+    echo "Services started! All components are running."
+    echo ""
+    echo "Available commands:"
+    echo "  ./weathercli list-cities"
+    echo "  ./weathercli add-city <cityname> <interval>"
+    echo "  ./weathercli remove-city <cityname>"
     ;;
   stop)
     echo "Stopping WeatherStream Pipeline..."
     docker compose down
     echo "All services stopped."
     ;;
+  list-cities)
+    curl -s http://localhost:8080/api/cities | jq '.' 2>/dev/null || curl -s http://localhost:8080/api/cities
+    ;;
+  add-city)
+    if [ -z "$2" ] || [ -z "$3" ]; then
+      echo "Usage: ./weathercli add-city <cityname> <interval>"
+      echo "Example: ./weathercli add-city paris 15"
+      exit 1
+    fi
+    curl -X POST http://localhost:8080/api/cities \
+      -H "Content-Type: application/json" \
+      -d "{\"cityName\": \"$2\", \"intervalMinutes\": $3}"
+    echo ""
+    ;;
+  remove-city)
+    if [ -z "$2" ]; then
+      echo "Usage: ./weathercli remove-city <cityname>"
+      exit 1
+    fi
+    curl -X DELETE "http://localhost:8080/api/cities/$2"
+    echo ""
+    ;;
   *)
-    echo "Usage: ./weathercli {start|stop}"
-    echo "  start - Start Kafka and PostgreSQL"
-    echo "  stop  - Stop all services"
+    echo "WeatherStream Pipeline CLI"
+    echo "Usage: ./weathercli {start|stop|list-cities|add-city|remove-city}"
+    echo ""
+    echo "Commands:"
+    echo "  start                          - Start all services"
+    echo "  stop                           - Stop all services"
+    echo "  list-cities                    - Show all tracked cities"
+    echo "  add-city <name> <interval>     - Add city with interval in minutes"
+    echo "  remove-city <name>             - Remove city from tracking"
     ;;
 esac
