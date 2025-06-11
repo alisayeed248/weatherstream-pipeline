@@ -2,6 +2,78 @@
 
 A production-ready weather data processing pipeline that continuously ingests, transforms, and streams weather data using Spring Boot, Kafka, and PostgreSQL.
 
+## Quick Start
+
+### Prerequisites
+- Linux environment (Ubuntu 20.04+ or WSL)
+- OpenWeatherMap API key ([get one free here](https://openweathermap.org/api))
+
+### Installation
+
+1. **Install dependencies:**
+   ```bash
+   # Update package list
+   sudo apt update
+   
+   # Install Git
+   sudo apt install git
+   
+   # Install Docker and Docker Compose
+   sudo apt install docker.io docker-compose-v2
+   
+   # Add your user to docker group (avoid needing sudo)
+   sudo usermod -aG docker $USER
+   
+   # Restart shell session for group changes
+   newgrp docker
+   ```
+
+2. **Clone and setup:**
+   ```bash
+   git clone https://github.com/your-username/weatherstream-pipeline
+   cd weatherstream-pipeline
+   ```
+
+3. **Set your API key:**
+   ```bash
+   export OPENWEATHER_API_KEY=your_api_key_here
+   ```
+
+4. **Start the pipeline:**
+   ```bash
+   ./weathercli start
+   ```
+
+### Usage
+
+```bash
+# Add cities to track
+./weathercli add-city london 5
+./weathercli add-city tokyo 10
+
+# List tracked cities  
+./weathercli list-cities
+
+# Remove a city
+./weathercli remove-city london
+
+# Stop all services
+./weathercli stop
+```
+
+### Verification
+
+After starting the pipeline, verify it's working:
+
+```bash
+# Check service health
+curl http://localhost:8080/hello
+curl http://localhost:8081/api/cities
+
+# View weather data for a city (after a few minutes)
+curl http://localhost:8081/api/weather/london
+```
+
 ## Architecture Overview
 
 The pipeline consists of two main services:
@@ -51,56 +123,17 @@ The pipeline consists of two main services:
 - **Kafka + Zookeeper** - Message streaming platform
 - **PostgreSQL** - Data persistence layer
 
-## Quick Start
+## CLI Commands
 
-### Prerequisites
-- Java 17+
-- Docker & Docker Compose
-- OpenWeatherMap API key
+The `weathercli` script provides an easy interface to manage the pipeline:
 
-### Setup
-
-1. **Start Infrastructure**
-   ```bash
-   docker-compose up -d
-   ```
-
-2. **Set API Key**
-   ```bash
-   export OPENWEATHER_API_KEY=your_api_key_here
-   ```
-
-3. **Start Services**
-   
-   Weather Ingestion Service:
-   ```bash
-   cd weather-ingestion-service
-   ./mvnw spring-boot:run
-   ```
-   
-   Weather Consumer Service:
-   ```bash
-   cd weather-consumer-service
-   ./gradlew bootRun
-   ```
-
-### Testing the Pipeline
-
-1. **Check Service Health**
-   ```bash
-   curl http://localhost:8080/hello
-   curl http://localhost:8081/api/cities
-   ```
-
-2. **Manual Weather Fetch**
-   ```bash
-   curl "http://localhost:8080/weather?city=London"
-   ```
-
-3. **Query Stored Data**
-   ```bash
-   curl http://localhost:8081/api/weather/London
-   ```
+| Command | Description |
+|---------|-------------|
+| `./weathercli start` | Start all services |
+| `./weathercli stop` | Stop all services |
+| `./weathercli list-cities` | Show all tracked cities |
+| `./weathercli add-city <name> <interval>` | Add city with interval in minutes |
+| `./weathercli remove-city <name>` | Remove city from tracking |
 
 ## API Endpoints
 
@@ -108,16 +141,18 @@ The pipeline consists of two main services:
 - `GET /hello` - Health check
 - `GET /weather?city={city}` - Manual weather fetch
 - `GET /test-db` - View tracked locations
+- `POST /api/cities` - Add new city to track
+- `DELETE /api/cities/{cityName}` - Remove city from tracking
 
 ### Consumer Service (Port 8081)
 - `GET /api/cities` - List all monitored cities
-- `GET /api/weather/{city}` - Recent weather for city
+- `GET /api/weather/{city}` - Recent weather for city (default: 10 records)
 - `GET /api/weather/{city}/recent?hours=24` - Weather within timeframe
 
 ## Configuration
 
 ### Environment Variables
-- `OPENWEATHER_API_KEY` - Your OpenWeatherMap API key
+- `OPENWEATHER_API_KEY` - Your OpenWeatherMap API key (required)
 - Database and Kafka connections configured in `application.properties`
 
 ### Database Connection
@@ -132,7 +167,43 @@ spring.datasource.password=password123
 spring.kafka.bootstrap-servers=localhost:9092
 ```
 
-## Development Notes
+## Troubleshooting
+
+### Common Issues
+
+**API Key Error:**
+```
+❌ Error: OpenWeatherMap API key not set
+```
+**Solution:** Set your API key with `export OPENWEATHER_API_KEY=your_key_here`
+
+**Docker Permission Error:**
+```
+permission denied while trying to connect to the Docker daemon socket
+```
+**Solution:** Run `newgrp docker` or restart your terminal session
+
+**Services Not Starting:**
+Check Docker Compose logs:
+```bash
+docker compose logs
+docker compose ps
+```
+
+**No Weather Data:**
+Verify the data flow:
+```bash
+# Check ingestion logs
+docker compose logs weather-ingestion
+
+# Check consumer logs  
+docker compose logs weather-consumer
+
+# Check database
+docker compose exec postgres psql -U weather -d weatherstream -c "SELECT COUNT(*) FROM weather_records;"
+```
+
+## Development Features
 
 ### Current Features
 - ✅ Dynamic city scheduling with configurable intervals
@@ -140,6 +211,7 @@ spring.kafka.bootstrap-servers=localhost:9092
 - ✅ PostgreSQL data persistence
 - ✅ REST API for data querying
 - ✅ Docker-based local development environment
+- ✅ CLI interface for easy management
 
 ### Planned Enhancements
 - [ ] Data processing service for derived metrics (heat index, wind chill)
@@ -155,6 +227,7 @@ weatherstream-pipeline/
 ├── weather-ingestion-service/     # Maven-based ingestion service
 ├── weather-consumer-service/      # Gradle-based consumer service
 ├── docker-compose.yml            # Local infrastructure
+├── weathercli                    # CLI management script
 └── README.md                     # This file
 ```
 
@@ -167,3 +240,11 @@ weatherstream-pipeline/
 - **Messaging**: Apache Kafka
 - **Containerization**: Docker
 - **External API**: OpenWeatherMap
+
+## Getting Help
+
+If you encounter issues:
+1. Check the [Troubleshooting](#troubleshooting) section
+2. View service logs with `docker compose logs [service-name]`
+3. Verify your API key is set correctly
+4. Ensure Docker is running and your user has permissions
