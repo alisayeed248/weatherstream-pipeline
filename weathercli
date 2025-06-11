@@ -13,6 +13,15 @@ fi
 case "$1" in
   start)
     echo "Starting WeatherStream Pipeline..."
+    if [ -z "$OPENWEATHER_API_KEY" ]; then
+        echo "❌ Error: OpenWeatherMap API key not set"
+        echo ""
+        echo "Please set your API key first:"
+        echo "  export OPENWEATHER_API_KEY=your_key_here"
+        echo ""
+        echo "Get a free API key at: https://openweathermap.org/api"
+        exit 1
+    fi
     $DOCKER_COMPOSE_CMD up -d
     echo "Services started! All components are running."
     echo ""
