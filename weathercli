@@ -10,6 +10,27 @@ else
   exit 1
 fi
 
+show_commands() {
+  echo "WeatherStream Pipeline CLI"
+  echo ""
+  echo "Available commands:"
+  echo "  start                          - Start all services"
+  echo "  stop                           - Stop all services"
+  echo "  status                         - Check if services are running"
+  echo "  logs                           - Show recent logs from all services"
+  echo "  reset                          - Stop all services and clear all data"
+  echo ""
+  echo "City management:"
+  echo "  list-cities                    - Show all tracked cities"
+  echo "  add-city <name> <interval>     - Add city with interval in minutes"
+  echo "  remove-city <name>             - Remove city from tracking"
+  echo ""
+  echo "Examples:"
+  echo "  ./weathercli start"
+  echo "  ./weathercli add-city paris 15"
+  echo "  ./weathercli status"
+}
+
 case "$1" in
   start)
     echo "Starting WeatherStream Pipeline..."
@@ -25,15 +46,67 @@ case "$1" in
     $DOCKER_COMPOSE_CMD up -d
     echo "Services started! All components are running."
     echo ""
-    echo "Available commands:"
-    echo "  ./weathercli list-cities"
-    echo "  ./weathercli add-city <cityname> <interval>"
-    echo "  ./weathercli remove-city <cityname>"
+    echo "Check status with: ./weathercli status"
     ;;
   stop)
     echo "Stopping WeatherStream Pipeline..."
     $DOCKER_COMPOSE_CMD down
     echo "All services stopped."
+    ;;
+  status)
+    echo "Checking service status..."
+    echo ""
+    
+    # Check if containers are running
+    echo "🐳 Container Status:"
+    $DOCKER_COMPOSE_CMD ps
+    echo ""
+    
+    # Check API health endpoints
+    echo "🏥 API Health Checks:"
+    
+    # Check ingestion service
+    if curl -s http://localhost:8080/hello >/dev/null 2>&1; then
+      echo "✅ Weather Ingestion Service (port 8080) - healthy"
+    else
+      echo "❌ Weather Ingestion Service (port 8080) - not responding"
+    fi
+    
+    # Check consumer service  
+    if curl -s http://localhost:8081/api/cities >/dev/null 2>&1; then
+      echo "✅ Weather Consumer Service (port 8081) - healthy"
+    else
+      echo "❌ Weather Consumer Service (port 8081) - not responding"
+    fi
+    
+    echo ""
+    echo "Use './weathercli logs' to see detailed logs"
+    ;;
+  logs)
+    echo "Showing recent logs from all services..."
+    echo "Press Ctrl+C to exit"
+    echo ""
+    $DOCKER_COMPOSE_CMD logs --tail=50 -f
+    ;;
+  reset)
+    echo "⚠️  WARNING: This will stop all services and delete ALL data!"
+    echo "This includes:"
+    echo "  - All tracked cities"
+    echo "  - All weather history" 
+    echo "  - Database contents"
+    echo ""
+    read -p "Are you sure? Type 'yes' to confirm: " confirm
+    
+    if [ "$confirm" = "yes" ]; then
+      echo ""
+      echo "Stopping services and clearing data..."
+      $DOCKER_COMPOSE_CMD down -v
+      echo "✅ All services stopped and data cleared"
+      echo ""
+      echo "Run './weathercli start' to begin fresh"
+    else
+      echo "Reset cancelled."
+    fi
     ;;
   list-cities)
     curl -s http://localhost:8080/api/cities | jq '.' 2>/dev/null || curl -s http://localhost:8080/api/cities
@@ -57,15 +130,13 @@ case "$1" in
     curl -X DELETE "http://localhost:8080/api/cities/$2"
     echo ""
     ;;
+  ""|help|--help|-h)
+    show_commands
+    ;;
   *)
-    echo "WeatherStream Pipeline CLI"
-    echo "Usage: ./weathercli {start|stop|list-cities|add-city|remove-city}"
+    echo "Unknown command: $1"
     echo ""
-    echo "Commands:"
-    echo "  start                          - Start all services"
-    echo "  stop                           - Stop all services"
-    echo "  list-cities                    - Show all tracked cities"
-    echo "  add-city <name> <interval>     - Add city with interval in minutes"
-    echo "  remove-city <name>             - Remove city from tracking"
+    show_commands
+    exit 1
     ;;
 esac
